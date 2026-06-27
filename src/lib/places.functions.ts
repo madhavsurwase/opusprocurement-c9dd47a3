@@ -123,6 +123,56 @@ export const searchVendors = createServerFn({ method: "POST" })
       return { vendors, recommendation: null, query: data.query };
     }
 
+    // Best-effort email scraping from vendor websites (top 8, parallel, short timeout)
+    await Promise.all(
+      vendors.slice(0, 8).map(async (v) => {
+        if (!v.website) return;
+        try {
+          const candidates = [v.website];
+          try {
+            const u = new URL(v.website);
+            candidates.push(`${u.origin}/contact`, `${u.origin}/contact-us`);
+          } catch {
+            // ignore invalid URL
+          }
+          for (const url of candidates) {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 4000);
+            try {
+              const res = await fetch(url, {
+                signal: ctrl.signal,
+                headers: { "User-Agent": "Mozilla/5.0 OpusProcureAI/1.0" },
+                redirect: "follow",
+              });
+              clearTimeout(t);
+              if (!res.ok) continue;
+              const html = (await res.text()).slice(0, 200_000);
+              const mailto = html.match(/mailto:([^"'?\s>]+@[^"'?\s>]+)/i);
+              const regex = html.match(
+                /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,
+              );
+              const found = (mailto?.[1] ?? regex?.[0] ?? "").toLowerCase().trim();
+              if (
+                found &&
+                !/\.(png|jpg|jpeg|gif|svg|webp)$/i.test(found) &&
+                !found.startsWith("example@") &&
+                !found.includes("sentry") &&
+                !found.includes("wixpress")
+              ) {
+                v.email = found;
+                break;
+              }
+            } catch {
+              clearTimeout(t);
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }),
+    );
+
+
     // AI recommendation
     let recommendation: AiRecommendation | null = null;
     try {
