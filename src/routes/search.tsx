@@ -309,6 +309,15 @@ function VendorCard({ vendor, index }: { vendor: Vendor; index: number }) {
             <span>{vendor.phone}</span>
           </a>
         )}
+        {vendor.email && (
+          <a
+            href={`mailto:${vendor.email}`}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground truncate"
+          >
+            <Mail className="w-4 h-4 shrink-0" />
+            <span className="truncate">{vendor.email}</span>
+          </a>
+        )}
         {vendor.website && (
           <a
             href={vendor.website}
