@@ -13,6 +13,7 @@ export type Vendor = {
   address: string;
   phone: string | null;
   website: string | null;
+  email: string | null;
   mapsUrl: string;
   category: string | null;
   topRecommended: boolean;
