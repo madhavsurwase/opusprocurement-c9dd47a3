@@ -8,6 +8,7 @@ import {
   Star,
   MapPin,
   Phone,
+  Mail,
   Globe,
   ExternalLink,
   Sparkles,
