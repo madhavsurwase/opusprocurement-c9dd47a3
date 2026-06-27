@@ -2,12 +2,19 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Search, MessageSquare, History, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
-const nav = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  disabled?: boolean;
+};
+
+const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/search", label: "Vendor Search", icon: Search },
   { to: "/chat", label: "AI Assistant", icon: MessageSquare, disabled: true },
   { to: "/history", label: "Recent Searches", icon: History, disabled: true },
-] as const;
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
