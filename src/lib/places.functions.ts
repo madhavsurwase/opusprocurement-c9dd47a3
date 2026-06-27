@@ -100,6 +100,7 @@ export const searchVendors = createServerFn({ method: "POST" })
         address: p.formattedAddress ?? "",
         phone: p.nationalPhoneNumber ?? p.internationalPhoneNumber ?? null,
         website: p.websiteUri ?? null,
+        email: null,
         mapsUrl:
           p.googleMapsUri ??
           `https://www.google.com/maps/search/?api=1&query_place_id=${p.id}`,
