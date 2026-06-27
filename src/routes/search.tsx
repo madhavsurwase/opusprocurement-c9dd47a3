@@ -8,6 +8,7 @@ import {
   Star,
   MapPin,
   Phone,
+  Mail,
   Globe,
   ExternalLink,
   Sparkles,
@@ -35,13 +36,13 @@ const EXAMPLES = [
 export const Route = createFileRoute("/search")({
   head: () => ({
     meta: [
-      { title: "Vendor Search — ProcureAI" },
+      { title: "Vendor Search — OpusProcureAI" },
       {
         name: "description",
         content:
           "Discover verified procurement vendors in Pune with AI-powered ranking and recommendations.",
       },
-      { property: "og:title", content: "Vendor Search — ProcureAI" },
+      { property: "og:title", content: "Vendor Search — OpusProcureAI" },
       {
         property: "og:description",
         content: "AI-ranked supplier discovery for enterprise procurement in Pune.",
@@ -69,7 +70,7 @@ function SearchPage() {
   });
 
   useEffect(() => {
-    document.title = "Vendor Search — ProcureAI";
+    document.title = "Vendor Search — OpusProcureAI";
   }, []);
 
   const handleSearch = (q?: string) => {
@@ -306,6 +307,15 @@ function VendorCard({ vendor, index }: { vendor: Vendor; index: number }) {
           >
             <Phone className="w-4 h-4" />
             <span>{vendor.phone}</span>
+          </a>
+        )}
+        {vendor.email && (
+          <a
+            href={`mailto:${vendor.email}`}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground truncate"
+          >
+            <Mail className="w-4 h-4 shrink-0" />
+            <span className="truncate">{vendor.email}</span>
           </a>
         )}
         {vendor.website && (
