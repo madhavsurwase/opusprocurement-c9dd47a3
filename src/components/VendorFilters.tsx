@@ -40,7 +40,6 @@ export type BusinessCategory =
   | "chemicals";
 
 export type MinRating = 0 | 3 | 3.5 | 4 | 4.5;
-export type StatusFlag = "open" | "closed" | "verified";
 export type Distance = "5" | "10" | "25" | "any";
 export type SortBy = "rating" | "reviews" | "nearest" | "alpha";
 
@@ -48,7 +47,6 @@ export type FilterState = {
   supplierType: SupplierType;
   categories: BusinessCategory[];
   minRating: MinRating;
-  status: StatusFlag[];
   distance: Distance;
   sortBy: SortBy;
 };
@@ -57,7 +55,6 @@ export const defaultFilters: FilterState = {
   supplierType: "all",
   categories: [],
   minRating: 0,
-  status: [],
   distance: "any",
   sortBy: "rating",
 };
@@ -96,11 +93,6 @@ const RATINGS: { value: MinRating; label: string }[] = [
   { value: 4.5, label: "4.5+ Stars" },
 ];
 
-const STATUSES: { value: StatusFlag; label: string }[] = [
-  { value: "open", label: "Open Now" },
-  { value: "closed", label: "Closed" },
-  { value: "verified", label: "Verified" },
-];
 
 const DISTANCES: { value: Distance; label: string }[] = [
   { value: "5", label: "Within 5 km" },
@@ -141,10 +133,6 @@ export function VendorFilters({
     );
   };
 
-  const toggleStatus = (s: StatusFlag) => {
-    const has = filters.status.includes(s);
-    set("status", has ? filters.status.filter((x) => x !== s) : [...filters.status, s]);
-  };
 
   const chips: { key: string; label: string; onRemove: () => void }[] = [];
   if (filters.supplierType !== "all")
@@ -166,13 +154,6 @@ export function VendorFilters({
       label: `${filters.minRating}+ ★`,
       onRemove: () => set("minRating", 0),
     });
-  filters.status.forEach((s) =>
-    chips.push({
-      key: `status-${s}`,
-      label: labelOf(STATUSES, s),
-      onRemove: () => toggleStatus(s),
-    }),
-  );
   if (filters.distance !== "any")
     chips.push({
       key: "distance",
@@ -211,7 +192,7 @@ export function VendorFilters({
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <FieldLabel label="Supplier Type">
           <Select
             value={filters.supplierType}
@@ -303,47 +284,6 @@ export function VendorFilters({
           </Select>
         </FieldLabel>
 
-        <FieldLabel label="Business Status">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-9 w-full justify-between font-normal"
-              >
-                <span className="truncate">
-                  {filters.status.length === 0
-                    ? "Any status"
-                    : `${filters.status.length} selected`}
-                </span>
-                <SlidersHorizontal className="w-3.5 h-3.5 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-56 p-2">
-              <div className="grid gap-1">
-                {STATUSES.map((s) => {
-                  const checked = filters.status.includes(s.value);
-                  return (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => toggleStatus(s.value)}
-                      className={cn(
-                        "flex items-center justify-between px-2 py-1.5 rounded text-sm text-left hover:bg-accent transition-colors",
-                        checked && "bg-accent",
-                      )}
-                    >
-                      <span>{s.label}</span>
-                      {checked && (
-                        <span className="text-primary text-xs font-semibold">✓</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </FieldLabel>
 
         <FieldLabel label="Distance">
           <Select
@@ -490,16 +430,6 @@ export function applyFilters<T extends LikeVendor>(
     out = out.filter((v) => (v.rating ?? 0) >= filters.minRating);
   }
 
-  if (filters.status.length > 0) {
-    out = out.filter((v) => {
-      return filters.status.every((s) => {
-        if (s === "verified") return !!v.website && !!v.phone;
-        if (s === "open") return (v.rating ?? 0) > 0;
-        if (s === "closed") return v.rating === null;
-        return true;
-      });
-    });
-  }
 
   // Distance: we don't have coordinates from the Places response; all results
   // are already biased to a 25km radius around Pune. Narrower distance values
