@@ -62,6 +62,12 @@ function SearchPage() {
   const fn = useServerFn(searchVendors);
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<SearchResult | null>(null);
+  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+
+  const filteredVendors = useMemo(
+    () => (result ? applyFilters(result.vendors, filters) : []),
+    [result, filters],
+  );
 
   const mutation = useMutation({
     mutationFn: (q: string) => fn({ data: { query: q } }),
