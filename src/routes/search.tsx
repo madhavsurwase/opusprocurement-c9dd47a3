@@ -180,22 +180,43 @@ function SearchPage() {
                 <RecommendationCard rec={result.recommendation} />
               )}
 
+              <VendorFilters
+                filters={filters}
+                onChange={setFilters}
+                resultCount={filteredVendors.length}
+              />
+
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-lg font-semibold tracking-tight">
-                    {result.vendors.length} vendors found for "{result.query}"
+                    {filteredVendors.length} of {result.vendors.length} vendors
+                    for "{result.query}"
                   </h2>
                   <span className="text-xs text-muted-foreground">
-                    Sorted by rating &amp; reviews
+                    Filters apply to results
                   </span>
                 </div>
                 {result.vendors.length === 0 ? (
                   <div className="card-elevated p-10 text-center text-muted-foreground">
                     No vendors found in Pune for this query. Try a different term.
                   </div>
+                ) : filteredVendors.length === 0 ? (
+                  <div className="card-elevated p-10 text-center text-muted-foreground">
+                    No vendors match the current filters.
+                    <div className="mt-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFilters(defaultFilters)}
+                      >
+                        Reset filters
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">
-                    {result.vendors.map((v, i) => (
+                    {filteredVendors.map((v, i) => (
                       <VendorCard key={v.id} vendor={v} index={i} />
                     ))}
                   </div>
