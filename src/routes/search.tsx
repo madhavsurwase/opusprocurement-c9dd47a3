@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -20,6 +20,12 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  VendorFilters,
+  applyFilters,
+  defaultFilters,
+  type FilterState,
+} from "@/components/VendorFilters";
 import { searchVendors, type Vendor, type SearchResult } from "@/lib/places.functions";
 import { pushHistory } from "@/lib/history";
 
