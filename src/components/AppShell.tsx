@@ -69,7 +69,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
               Live
             </span>
-            <span className="hidden sm:inline">Powered by Lovable AI</span>
           </div>
         </header>
         <div className="flex-1 p-6">{children}</div>
