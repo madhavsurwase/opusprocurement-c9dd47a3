@@ -221,7 +221,7 @@ function SearchPage() {
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">
                     {filteredVendors.map((v, i) => (
-                      <VendorCard key={v.id} vendor={v} index={i} />
+                      <VendorCard key={v.id} vendor={v} index={i} query={result.query} />
                     ))}
                   </div>
                 )}
