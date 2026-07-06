@@ -16,10 +16,14 @@ import {
   AlertCircle,
   Building2,
   Award,
+  Send,
+  ChevronDown,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   VendorFilters,
   applyFilters,
@@ -217,7 +221,7 @@ function SearchPage() {
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">
                     {filteredVendors.map((v, i) => (
-                      <VendorCard key={v.id} vendor={v} index={i} />
+                      <VendorCard key={v.id} vendor={v} index={i} query={result.query} />
                     ))}
                   </div>
                 )}
@@ -287,7 +291,57 @@ function RecommendationCard({ rec }: { rec: { vendorName: string; reasons: strin
   );
 }
 
-function VendorCard({ vendor, index }: { vendor: Vendor; index: number }) {
+function VendorCard({ vendor, index, query }: { vendor: Vendor; index: number; query: string }) {
+  const [showForm, setShowForm] = useState(false);
+  const [product, setProduct] = useState(query);
+  const [quantity, setQuantity] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [yourName, setYourName] = useState("");
+  const [yourEmail, setYourEmail] = useState("");
+  const [yourPhone, setYourPhone] = useState("");
+  const [vendorEmailInput, setVendorEmailInput] = useState(vendor.email ?? "");
+
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(vendorEmailInput.trim());
+  const canSend =
+    emailValid &&
+    product.trim().length > 0 &&
+    quantity.trim().length > 0 &&
+    yourName.trim().length > 0 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(yourEmail.trim());
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSend) return;
+    const subject = `Quotation Request: ${product.trim()}`;
+    const body = [
+      `Dear ${vendor.name},`,
+      ``,
+      `We are interested in receiving a quotation for the following requirement:`,
+      ``,
+      `Product / Item : ${product.trim()}`,
+      `Quantity       : ${quantity.trim()}`,
+      deliveryDate ? `Required by    : ${deliveryDate}` : null,
+      notes.trim() ? `` : null,
+      notes.trim() ? `Additional notes:` : null,
+      notes.trim() ? notes.trim() : null,
+      ``,
+      `If you are interested in participating in this requirement, please reach out to us at ${yourEmail.trim()}${yourPhone.trim() ? ` or ${yourPhone.trim()}` : ""}.`,
+      ``,
+      `Kindly share your best pricing, lead time, and payment terms at the earliest.`,
+      ``,
+      `Regards,`,
+      yourName.trim(),
+      yourEmail.trim(),
+      yourPhone.trim(),
+      `— Sent via OpusProcureAI`,
+    ]
+      .filter((l) => l !== null)
+      .join("\n");
+    const mailto = `mailto:${encodeURIComponent(vendorEmailInput.trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -364,7 +418,7 @@ function VendorCard({ vendor, index }: { vendor: Vendor; index: number }) {
         )}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-border flex items-center gap-2">
+      <div className="mt-4 pt-4 border-t border-border flex items-center justify-between gap-2">
         <a
           href={vendor.mapsUrl}
           target="_blank"
@@ -374,7 +428,168 @@ function VendorCard({ vendor, index }: { vendor: Vendor; index: number }) {
           <ExternalLink className="w-3.5 h-3.5" />
           View on Google Maps
         </a>
+        <Button
+          type="button"
+          size="sm"
+          variant={showForm ? "outline" : "default"}
+          onClick={() => setShowForm((s) => !s)}
+          className="gap-1.5 h-8"
+        >
+          <Send className="w-3.5 h-3.5" />
+          {showForm ? "Cancel" : "Request Quotation"}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform ${showForm ? "rotate-180" : ""}`}
+          />
+        </Button>
       </div>
+
+      <AnimatePresence initial={false}>
+        {showForm && (
+          <motion.form
+            key="quote-form"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            onSubmit={handleSend}
+            className="overflow-hidden"
+          >
+            <div className="mt-4 pt-4 border-t border-border space-y-3">
+              <div className="text-xs uppercase tracking-wider font-medium text-muted-foreground">
+                Quotation Request
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor={`vemail-${vendor.id}`} className="text-xs">
+                  Vendor email {vendor.email ? "(auto-filled)" : "(not found — enter manually)"}
+                </Label>
+                <Input
+                  id={`vemail-${vendor.id}`}
+                  type="email"
+                  value={vendorEmailInput}
+                  onChange={(e) => setVendorEmailInput(e.target.value)}
+                  placeholder="vendor@example.com"
+                  maxLength={255}
+                  className="h-9"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor={`prod-${vendor.id}`} className="text-xs">
+                  Product / Item
+                </Label>
+                <Input
+                  id={`prod-${vendor.id}`}
+                  value={product}
+                  onChange={(e) => setProduct(e.target.value)}
+                  maxLength={200}
+                  className="h-9"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor={`qty-${vendor.id}`} className="text-xs">
+                    Quantity
+                  </Label>
+                  <Input
+                    id={`qty-${vendor.id}`}
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="e.g. 25 units"
+                    maxLength={50}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor={`date-${vendor.id}`} className="text-xs">
+                    Required by
+                  </Label>
+                  <Input
+                    id={`date-${vendor.id}`}
+                    type="date"
+                    value={deliveryDate}
+                    onChange={(e) => setDeliveryDate(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor={`notes-${vendor.id}`} className="text-xs">
+                  Additional specs (optional)
+                </Label>
+                <Textarea
+                  id={`notes-${vendor.id}`}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  maxLength={1000}
+                  rows={2}
+                  className="text-sm"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-border/60 space-y-3">
+                <div className="text-xs uppercase tracking-wider font-medium text-muted-foreground">
+                  Your contact
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`yname-${vendor.id}`} className="text-xs">
+                      Your name
+                    </Label>
+                    <Input
+                      id={`yname-${vendor.id}`}
+                      value={yourName}
+                      onChange={(e) => setYourName(e.target.value)}
+                      maxLength={100}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`yemail-${vendor.id}`} className="text-xs">
+                      Your email
+                    </Label>
+                    <Input
+                      id={`yemail-${vendor.id}`}
+                      type="email"
+                      value={yourEmail}
+                      onChange={(e) => setYourEmail(e.target.value)}
+                      maxLength={255}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor={`yphone-${vendor.id}`} className="text-xs">
+                    Your phone (optional)
+                  </Label>
+                  <Input
+                    id={`yphone-${vendor.id}`}
+                    value={yourPhone}
+                    onChange={(e) => setYourPhone(e.target.value)}
+                    maxLength={30}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!canSend}
+                className="w-full gap-2 h-9 mt-1"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Open in email client
+              </Button>
+              <p className="text-[11px] text-muted-foreground text-center">
+                This opens your default email app with the message pre-filled.
+              </p>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
