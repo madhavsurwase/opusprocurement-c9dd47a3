@@ -25,6 +25,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   VendorFilters,
   applyFilters,
   defaultFilters,
@@ -302,6 +310,10 @@ function VendorCard({ vendor, index, query }: { vendor: Vendor; index: number; q
   const [yourPhone, setYourPhone] = useState("");
   const [vendorEmailInput, setVendorEmailInput] = useState(vendor.email ?? "");
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewSubject, setPreviewSubject] = useState("");
+  const [previewBody, setPreviewBody] = useState("");
+
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(vendorEmailInput.trim());
   const canSend =
     emailValid &&
@@ -338,8 +350,15 @@ function VendorCard({ vendor, index, query }: { vendor: Vendor; index: number; q
     ]
       .filter((l) => l !== null)
       .join("\n");
-    const mailto = `mailto:${encodeURIComponent(vendorEmailInput.trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setPreviewSubject(subject);
+    setPreviewBody(body);
+    setPreviewOpen(true);
+  };
+
+  const handleOpenMailClient = () => {
+    const mailto = `mailto:${encodeURIComponent(vendorEmailInput.trim())}?subject=${encodeURIComponent(previewSubject)}&body=${encodeURIComponent(previewBody)}`;
     window.location.href = mailto;
+    setPreviewOpen(false);
   };
 
   return (
@@ -581,15 +600,70 @@ function VendorCard({ vendor, index, query }: { vendor: Vendor; index: number; q
                 className="w-full gap-2 h-9 mt-1"
               >
                 <Send className="w-3.5 h-3.5" />
-                Open in email client
+                Preview email
               </Button>
               <p className="text-[11px] text-muted-foreground text-center">
-                This opens your default email app with the message pre-filled.
+                You'll review and edit the message before your email client opens.
               </p>
             </div>
           </motion.form>
         )}
       </AnimatePresence>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Review quotation email</DialogTitle>
+            <DialogDescription>
+              Edit the subject or message below. When ready, open your email client to send.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor={`pv-to-${vendor.id}`} className="text-xs">To</Label>
+              <Input
+                id={`pv-to-${vendor.id}`}
+                value={vendorEmailInput}
+                onChange={(e) => setVendorEmailInput(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`pv-subj-${vendor.id}`} className="text-xs">Subject</Label>
+              <Input
+                id={`pv-subj-${vendor.id}`}
+                value={previewSubject}
+                onChange={(e) => setPreviewSubject(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`pv-body-${vendor.id}`} className="text-xs">Message</Label>
+              <Textarea
+                id={`pv-body-${vendor.id}`}
+                value={previewBody}
+                onChange={(e) => setPreviewBody(e.target.value)}
+                rows={14}
+                className="text-sm font-mono"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={() => setPreviewOpen(false)}>
+              Back to edit
+            </Button>
+            <Button
+              type="button"
+              onClick={handleOpenMailClient}
+              disabled={!emailValid || !previewSubject.trim() || !previewBody.trim()}
+              className="gap-2"
+            >
+              <Send className="w-4 h-4" />
+              Open in email client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
