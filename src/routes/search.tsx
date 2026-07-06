@@ -310,6 +310,10 @@ function VendorCard({ vendor, index, query }: { vendor: Vendor; index: number; q
   const [yourPhone, setYourPhone] = useState("");
   const [vendorEmailInput, setVendorEmailInput] = useState(vendor.email ?? "");
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewSubject, setPreviewSubject] = useState("");
+  const [previewBody, setPreviewBody] = useState("");
+
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(vendorEmailInput.trim());
   const canSend =
     emailValid &&
@@ -346,8 +350,15 @@ function VendorCard({ vendor, index, query }: { vendor: Vendor; index: number; q
     ]
       .filter((l) => l !== null)
       .join("\n");
-    const mailto = `mailto:${encodeURIComponent(vendorEmailInput.trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setPreviewSubject(subject);
+    setPreviewBody(body);
+    setPreviewOpen(true);
+  };
+
+  const handleOpenMailClient = () => {
+    const mailto = `mailto:${encodeURIComponent(vendorEmailInput.trim())}?subject=${encodeURIComponent(previewSubject)}&body=${encodeURIComponent(previewBody)}`;
     window.location.href = mailto;
+    setPreviewOpen(false);
   };
 
   return (
