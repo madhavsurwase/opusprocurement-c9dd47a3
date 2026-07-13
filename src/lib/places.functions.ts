@@ -43,54 +43,86 @@ export const searchVendors = createServerFn({ method: "POST" })
     }
 
     // Places API (New) - text search restricted to Pune
-    const placesRes = await fetch(
-      "https://connector-gateway.lovable.dev/google_maps/places/v1/places:searchText",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableKey}`,
-          "X-Connection-Api-Key": mapsKey,
-          "Content-Type": "application/json",
-          "X-Goog-FieldMask":
-            "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.primaryTypeDisplayName,places.types,places.businessStatus",
-        },
-        body: JSON.stringify({
-          textQuery: `${data.query} suppliers dealers in Pune Maharashtra`,
-          maxResultCount: 15,
-          locationBias: {
-            circle: {
-              center: { latitude: 18.5204, longitude: 73.8567 },
-              radius: 25000,
-            },
-          },
-          regionCode: "IN",
-        }),
-      },
-    );
-
-    if (!placesRes.ok) {
-      const text = await placesRes.text();
-      throw new Error(`Places API error ${placesRes.status}: ${text.slice(0, 200)}`);
-    }
-
-    const placesData = (await placesRes.json()) as {
-      places?: Array<{
-        id: string;
-        displayName?: { text?: string };
-        formattedAddress?: string;
-        rating?: number;
-        userRatingCount?: number;
-        nationalPhoneNumber?: string;
-        internationalPhoneNumber?: string;
-        websiteUri?: string;
-        googleMapsUri?: string;
-        primaryTypeDisplayName?: { text?: string };
-        types?: string[];
-        businessStatus?: string;
-      }>;
+    // Run several query variants in parallel and paginate each to gather
+    // vendors of every size (small local shops through large distributors).
+    type PlaceItem = {
+      id: string;
+      displayName?: { text?: string };
+      formattedAddress?: string;
+      rating?: number;
+      userRatingCount?: number;
+      nationalPhoneNumber?: string;
+      internationalPhoneNumber?: string;
+      websiteUri?: string;
+      googleMapsUri?: string;
+      primaryTypeDisplayName?: { text?: string };
+      types?: string[];
+      businessStatus?: string;
     };
 
-    const vendors: Vendor[] = (placesData.places ?? [])
+    const queryVariants = [
+      `${data.query} suppliers in Pune Maharashtra`,
+      `${data.query} dealers in Pune`,
+      `${data.query} wholesalers distributors Pune`,
+      `${data.query} manufacturers Pune`,
+      `${data.query} shop store Pune`,
+    ];
+
+    async function searchOnce(textQuery: string, pageToken?: string) {
+      const res = await fetch(
+        "https://connector-gateway.lovable.dev/google_maps/places/v1/places:searchText",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${lovableKey}`,
+            "X-Connection-Api-Key": mapsKey!,
+            "Content-Type": "application/json",
+            "X-Goog-FieldMask":
+              "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.primaryTypeDisplayName,places.types,places.businessStatus,nextPageToken",
+          },
+          body: JSON.stringify({
+            textQuery,
+            maxResultCount: 20,
+            pageSize: 20,
+            ...(pageToken ? { pageToken } : {}),
+            locationBias: {
+              circle: {
+                center: { latitude: 18.5204, longitude: 73.8567 },
+                radius: 30000,
+              },
+            },
+            regionCode: "IN",
+          }),
+        },
+      );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Places API error ${res.status}: ${text.slice(0, 200)}`);
+      }
+      return (await res.json()) as { places?: PlaceItem[]; nextPageToken?: string };
+    }
+
+    async function fetchAllPages(textQuery: string): Promise<PlaceItem[]> {
+      const collected: PlaceItem[] = [];
+      let token: string | undefined = undefined;
+      for (let i = 0; i < 3; i++) {
+        const page = await searchOnce(textQuery, token);
+        if (page.places?.length) collected.push(...page.places);
+        if (!page.nextPageToken) break;
+        token = page.nextPageToken;
+        // Places API requires a short delay before nextPageToken is active
+        await new Promise((r) => setTimeout(r, 1600));
+      }
+      return collected;
+    }
+
+    const allBatches = await Promise.all(queryVariants.map((q) => fetchAllPages(q)));
+    const seen = new Map<string, PlaceItem>();
+    for (const batch of allBatches) {
+      for (const p of batch) if (!seen.has(p.id)) seen.set(p.id, p);
+    }
+
+    const vendors: Vendor[] = Array.from(seen.values())
       .filter((p) => p.businessStatus !== "CLOSED_PERMANENTLY")
       .map((p) => ({
         id: p.id,
