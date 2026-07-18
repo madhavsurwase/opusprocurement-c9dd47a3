@@ -12,7 +12,7 @@ type NavItem = {
 const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/search", label: "Vendor Search", icon: Search },
-  { to: "/chat", label: "AI Assistant", icon: MessageSquare, disabled: true },
+  { to: "/assistant", label: "AI Assistant", icon: MessageSquare },
   { to: "/history", label: "Recent Searches", icon: History, disabled: true },
 ];
 

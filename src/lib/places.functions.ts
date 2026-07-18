@@ -17,12 +17,17 @@ export type Vendor = {
   mapsUrl: string;
   category: string | null;
   topRecommended: boolean;
+  openNow: boolean | null;
+  distanceKm: number | null;
+  businessStatus: string | null;
 };
 
 export type AiRecommendation = {
   vendorId: string | null;
   vendorName: string;
   reasons: string[];
+  advantages: string[];
+  risks: string[];
   confidence: number;
   summary: string;
 };
@@ -33,6 +38,19 @@ export type SearchResult = {
   query: string;
 };
 
+const PUNE = { lat: 18.5204, lng: 73.8567 };
+
+function haversineKm(lat: number, lng: number): number {
+  const R = 6371;
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const dLat = toRad(lat - PUNE.lat);
+  const dLng = toRad(lng - PUNE.lng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(PUNE.lat)) * Math.cos(toRad(lat)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export const searchVendors = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => SearchInput.parse(input))
   .handler(async ({ data }): Promise<SearchResult> => {
@@ -42,9 +60,6 @@ export const searchVendors = createServerFn({ method: "POST" })
       throw new Error("Missing Google Maps or Lovable AI credentials.");
     }
 
-    // Places API (New) - text search restricted to Pune
-    // Run several query variants in parallel and paginate each to gather
-    // vendors of every size (small local shops through large distributors).
     type PlaceItem = {
       id: string;
       displayName?: { text?: string };
@@ -58,6 +73,9 @@ export const searchVendors = createServerFn({ method: "POST" })
       primaryTypeDisplayName?: { text?: string };
       types?: string[];
       businessStatus?: string;
+      location?: { latitude?: number; longitude?: number };
+      currentOpeningHours?: { openNow?: boolean };
+      regularOpeningHours?: { openNow?: boolean };
     };
 
     const queryVariants = [
@@ -78,7 +96,7 @@ export const searchVendors = createServerFn({ method: "POST" })
             "X-Connection-Api-Key": mapsKey!,
             "Content-Type": "application/json",
             "X-Goog-FieldMask":
-              "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.primaryTypeDisplayName,places.types,places.businessStatus,nextPageToken",
+              "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.primaryTypeDisplayName,places.types,places.businessStatus,places.location,places.currentOpeningHours,places.regularOpeningHours,nextPageToken",
           },
           body: JSON.stringify({
             textQuery,
@@ -87,7 +105,7 @@ export const searchVendors = createServerFn({ method: "POST" })
             ...(pageToken ? { pageToken } : {}),
             locationBias: {
               circle: {
-                center: { latitude: 18.5204, longitude: 73.8567 },
+                center: { latitude: PUNE.lat, longitude: PUNE.lng },
                 radius: 30000,
               },
             },
@@ -110,7 +128,6 @@ export const searchVendors = createServerFn({ method: "POST" })
         if (page.places?.length) collected.push(...page.places);
         if (!page.nextPageToken) break;
         token = page.nextPageToken;
-        // Places API requires a short delay before nextPageToken is active
         await new Promise((r) => setTimeout(r, 1600));
       }
       return collected;
@@ -124,26 +141,39 @@ export const searchVendors = createServerFn({ method: "POST" })
 
     const vendors: Vendor[] = Array.from(seen.values())
       .filter((p) => p.businessStatus !== "CLOSED_PERMANENTLY")
-      .map((p) => ({
-        id: p.id,
-        name: p.displayName?.text ?? "Unknown",
-        rating: p.rating ?? null,
-        reviews: p.userRatingCount ?? null,
-        address: p.formattedAddress ?? "",
-        phone: p.nationalPhoneNumber ?? p.internationalPhoneNumber ?? null,
-        website: p.websiteUri ?? null,
-        email: null,
-        mapsUrl:
-          p.googleMapsUri ??
-          `https://www.google.com/maps/search/?api=1&query_place_id=${p.id}`,
-        category:
-          p.primaryTypeDisplayName?.text ??
-          (p.types?.[0] ?? "").replace(/_/g, " ") ??
-          null,
-        topRecommended: false,
-      }));
+      .map((p) => {
+        const lat = p.location?.latitude;
+        const lng = p.location?.longitude;
+        const distanceKm =
+          typeof lat === "number" && typeof lng === "number"
+            ? Math.round(haversineKm(lat, lng) * 10) / 10
+            : null;
+        return {
+          id: p.id,
+          name: p.displayName?.text ?? "Unknown",
+          rating: p.rating ?? null,
+          reviews: p.userRatingCount ?? null,
+          address: p.formattedAddress ?? "",
+          phone: p.nationalPhoneNumber ?? p.internationalPhoneNumber ?? null,
+          website: p.websiteUri ?? null,
+          email: null,
+          mapsUrl:
+            p.googleMapsUri ??
+            `https://www.google.com/maps/search/?api=1&query_place_id=${p.id}`,
+          category:
+            p.primaryTypeDisplayName?.text ??
+            (p.types?.[0] ?? "").replace(/_/g, " ") ??
+            null,
+          topRecommended: false,
+          openNow:
+            p.currentOpeningHours?.openNow ??
+            p.regularOpeningHours?.openNow ??
+            null,
+          distanceKm,
+          businessStatus: p.businessStatus ?? null,
+        };
+      });
 
-    // Sort by rating desc, then reviews desc
     vendors.sort((a, b) => {
       const ra = a.rating ?? 0;
       const rb = b.rating ?? 0;
@@ -155,7 +185,7 @@ export const searchVendors = createServerFn({ method: "POST" })
       return { vendors, recommendation: null, query: data.query };
     }
 
-    // Best-effort email scraping from vendor websites (top 8, parallel, short timeout)
+    // Best-effort email scraping (top 8, parallel)
     await Promise.all(
       vendors.slice(0, 8).map(async (v) => {
         if (!v.website) return;
@@ -164,9 +194,7 @@ export const searchVendors = createServerFn({ method: "POST" })
           try {
             const u = new URL(v.website);
             candidates.push(`${u.origin}/contact`, `${u.origin}/contact-us`);
-          } catch {
-            // ignore invalid URL
-          }
+          } catch {}
           for (const url of candidates) {
             const ctrl = new AbortController();
             const t = setTimeout(() => ctrl.abort(), 4000);
@@ -198,27 +226,24 @@ export const searchVendors = createServerFn({ method: "POST" })
               clearTimeout(t);
             }
           }
-        } catch {
-          // ignore
-        }
+        } catch {}
       }),
     );
 
-
-    // AI recommendation
     let recommendation: AiRecommendation | null = null;
     try {
       const { generateText, Output } = await import("ai");
       const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
       const gateway = createLovableAiGatewayProvider(lovableKey);
 
-      const topCandidates = vendors.slice(0, 8).map((v) => ({
+      const topCandidates = vendors.slice(0, 10).map((v) => ({
         id: v.id,
         name: v.name,
         rating: v.rating,
         reviews: v.reviews,
         category: v.category,
-        address: v.address,
+        distanceKm: v.distanceKm,
+        openNow: v.openNow,
         hasWebsite: !!v.website,
         hasPhone: !!v.phone,
       }));
@@ -226,20 +251,29 @@ export const searchVendors = createServerFn({ method: "POST" })
       const RecSchema = z.object({
         vendorId: z.string(),
         vendorName: z.string(),
-        reasons: z.array(z.string()).min(2).max(5),
-        confidence: z.number().min(0).max(100),
+        reasons: z.array(z.string()),
+        advantages: z.array(z.string()),
+        risks: z.array(z.string()),
+        confidence: z.number(),
         summary: z.string(),
       });
 
       const { output } = await generateText({
         model: gateway("google/gemini-3-flash-preview"),
         output: Output.object({ schema: RecSchema }),
-        prompt: `You are an enterprise procurement analyst. From the following vendors in Pune, Maharashtra, recommend the single best supplier for "${data.query}". Consider rating, review count, category fit, and contactability.
+        prompt: `You are an enterprise procurement analyst. From the following vendors in Pune, Maharashtra, recommend the single best supplier for "${data.query}". Consider rating, review count, category fit, distance, open-now status, and contactability.
 
 Vendors:
 ${JSON.stringify(topCandidates, null, 2)}
 
-Return the vendorId (exact match from the list), vendorName, 3-5 concise bullet reasons (e.g. "Highest rating", "450+ reviews", "Authorized dealer", "Strong local presence"), a confidence score (0-100), and a 1-sentence summary.`,
+Return:
+- vendorId (exact match from the list)
+- vendorName
+- reasons: 3-5 concise bullet reasons for choosing this vendor
+- advantages: 2-4 concrete advantages (e.g. "Highly rated 4.7 with 500+ reviews", "Only 3.2 km from central Pune")
+- risks: 1-3 possible risks or considerations (e.g. "No public website — verify legitimacy by phone", "Small review count", "Currently closed — call during business hours")
+- confidence: 0-100
+- summary: one sentence`,
       });
 
       recommendation = output;
@@ -248,7 +282,6 @@ Return the vendorId (exact match from the list), vendorName, 3-5 concise bullet 
       else if (vendors[0]) vendors[0].topRecommended = true;
     } catch (err) {
       console.error("AI recommendation failed", err);
-      // Fallback: pick the top-sorted vendor
       const top = vendors[0];
       top.topRecommended = true;
       recommendation = {
@@ -258,8 +291,12 @@ Return the vendorId (exact match from the list), vendorName, 3-5 concise bullet 
           top.rating ? `Highest rating: ${top.rating.toFixed(1)} ★` : "Strong local presence",
           top.reviews ? `${top.reviews}+ verified reviews` : "Established vendor",
           "Located in Pune, Maharashtra",
-          top.website ? "Verified online presence" : "Reachable by phone",
         ],
+        advantages: [
+          top.website ? "Verified online presence" : "Reachable by phone",
+          top.distanceKm ? `~${top.distanceKm} km from central Pune` : "Local supplier",
+        ],
+        risks: ["Automated selection — verify credentials before ordering"],
         confidence: 80,
         summary: `${top.name} stands out among Pune suppliers based on rating and review volume.`,
       };
