@@ -432,9 +432,14 @@ export function applyFilters<T extends LikeVendor>(
   }
 
 
-  // Distance: we don't have coordinates from the Places response; all results
-  // are already biased to a 25km radius around Pune. Narrower distance values
-  // act as a soft hint and are not enforced here.
+  if (filters.distance !== "any") {
+    const km = Number(filters.distance);
+    out = out.filter((v) => {
+      // Include vendors without coordinates (don't drop them).
+      if (v.distanceKm == null) return true;
+      return v.distanceKm <= km;
+    });
+  }
 
   switch (filters.sortBy) {
     case "reviews":
@@ -444,9 +449,11 @@ export function applyFilters<T extends LikeVendor>(
       out.sort((a, b) => a.name.localeCompare(b.name));
       break;
     case "nearest":
-      // No coordinates available — fall back to review count as a proxy for
-      // local prominence within Pune.
-      out.sort((a, b) => (b.reviews ?? 0) - (a.reviews ?? 0));
+      out.sort((a, b) => {
+        const da = a.distanceKm ?? Number.POSITIVE_INFINITY;
+        const db = b.distanceKm ?? Number.POSITIVE_INFINITY;
+        return da - db;
+      });
       break;
     case "rating":
     default:
