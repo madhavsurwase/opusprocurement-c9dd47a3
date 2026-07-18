@@ -401,6 +401,7 @@ type LikeVendor = {
   category: string | null;
   website: string | null;
   phone: string | null;
+  distanceKm?: number | null;
 };
 
 export function applyFilters<T extends LikeVendor>(
