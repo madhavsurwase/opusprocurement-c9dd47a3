@@ -65,7 +65,7 @@ export function CompareModal({
                   <Th>Category</Th>
                   <Th>Phone</Th>
                   <Th>Website</Th>
-                  <Th></Th>
+                  <Th>{" "}</Th>
                 </tr>
               </thead>
               <tbody>
