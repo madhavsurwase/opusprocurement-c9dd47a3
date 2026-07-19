@@ -32,11 +32,15 @@ User: "Find HP printer manufacturers with 4.5+ rating."
 Assistant: Searching HP printer manufacturers in Pune with 4.5+ Google rating.
 <search>{"product":"HP printer","supplierType":"manufacturer","category":"it_hardware","minRating":4.5,"distance":"any"}</search>
 
-User: "Compare the top three suppliers." — no <search> block; instead reply: "Open the search results, tick 'Compare' on up to 3 vendors, then click the floating Compare bar."
+User: "I need a wireless mouse."
+Assistant: Searching Pune suppliers for a wireless mouse.
+<search>{"product":"wireless mouse","category":"it_hardware","minRating":0,"distance":"any"}</search>
 
-User: "Generate an RFQ." — no <search> block; instead reply: "Click 'Generate RFQ' on any vendor card in the search results — you can edit every field before sending."
+User: "Compare the top three suppliers." — no <search> block; instead reply: "Open Vendor Search, tick 'Compare' on up to 3 vendors, then click the floating Compare bar."
 
-Never invent vendors. Never send emails. Keep replies under 3 sentences.`;
+Rules:
+- Almost every user message is a procurement request — ALWAYS emit a <search> block unless it's clearly meta (comparing, greetings, help).
+- Never invent vendors. Never send emails. Keep replies to ONE short sentence before the <search> block.`;
 
 export const Route = createFileRoute("/api/chat")({
   server: {
