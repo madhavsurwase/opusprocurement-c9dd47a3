@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div>
             <div className="font-semibold text-sm tracking-tight text-white">OpusProcureAI</div>
-            <div className="text-[11px] text-white/60">Enterprise Procurement</div>
+            
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
