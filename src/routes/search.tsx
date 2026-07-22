@@ -16,7 +16,6 @@ import {
   AlertCircle,
   Building2,
   Award,
-  Send,
   Check,
   X,
   ThumbsUp,
@@ -40,7 +39,7 @@ import {
   type Distance,
   type SupplierType,
 } from "@/components/VendorFilters";
-import { RfqDialog } from "@/components/RfqDialog";
+import { sendProcurementEmail } from "@/lib/send-email";
 import { CompareModal } from "@/components/CompareModal";
 import { searchVendors, type Vendor, type SearchResult, type AiRecommendation } from "@/lib/places.functions";
 import { pushHistory } from "@/lib/history";
@@ -457,7 +456,7 @@ function VendorCard({
   inCompare: boolean;
   onToggleCompare: () => void;
 }) {
-  const [rfqOpen, setRfqOpen] = useState(false);
+  
 
   return (
     <motion.div
@@ -554,20 +553,13 @@ function VendorCard({
         <Button
           type="button"
           size="sm"
-          onClick={() => setRfqOpen(true)}
+          onClick={() => sendProcurementEmail(vendor, query)}
           className="gap-1.5 h-8"
         >
-          <Send className="w-3.5 h-3.5" />
-          Generate RFQ
+          <Mail className="w-3.5 h-3.5" />
+          Send Email
         </Button>
       </div>
-
-      <RfqDialog
-        open={rfqOpen}
-        onOpenChange={setRfqOpen}
-        vendor={vendor}
-        defaultProduct={query}
-      />
     </motion.div>
   );
 }

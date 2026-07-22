@@ -48,7 +48,7 @@ const EXAMPLES = [
 ];
 
 const CHAT_KEY = "opusprocure.chat.v2";
-const PROC_EMAIL = "procurement@opusprocure.com";
+
 
 type ExtractedSearch = {
   product?: string;
@@ -71,35 +71,6 @@ function stripSearchTag(text: string) {
   return text.replace(/<search>[\s\S]*?<\/search>/g, "").trim();
 }
 
-function buildEmail(vendor: Vendor, product: string, quantity?: string | null) {
-  const subject = `Procurement Inquiry – ${product}`;
-  const qtyBlock = quantity ? `\n\nQuantity:\n${quantity}` : "";
-  const body = `Dear Sir/Madam,
-
-We are currently looking to procure the following item for our organization.
-
-Product:
-${product}${qtyBlock}
-
-If your company is interested in supplying this requirement, kindly reach out to our Procurement Team using the email address below.
-
-Procurement Email:
-${PROC_EMAIL}
-
-We would be happy to discuss the requirement further and share additional details.
-
-Thank you for your time.
-
-Thanks & Regards,
-
-Opus Procurement Team`;
-  const to = vendor.email ?? "";
-  return {
-    subject,
-    body,
-    mailto: `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
-  };
-}
 
 function VendorCardInline({
   vendor,
@@ -111,8 +82,7 @@ function VendorCardInline({
   quantity?: string | null;
 }) {
   const handleSendEmail = () => {
-    const { mailto } = buildEmail(vendor, product, quantity);
-    window.location.href = mailto;
+    sendProcurementEmail(vendor, product, quantity);
   };
 
   const recommendation = vendor.topRecommended
