@@ -18,7 +18,7 @@ export async function exportVendorsXLSX(vendors: Vendor[], query: string) {
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Vendors");
-  XLSX.writeFile(wb, `OpusProcureAI-Vendors-${sanitize(query)}.xlsx`);
+  XLSX.writeFile(wb, `Opus-Procure-AI-Vendors-${sanitize(query)}.xlsx`);
 }
 
 export async function exportVendorsPDF(vendors: Vendor[], query: string) {
@@ -26,7 +26,7 @@ export async function exportVendorsPDF(vendors: Vendor[], query: string) {
   const autoTable = (await import("jspdf-autotable")).default;
   const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(16);
-  doc.text("OpusProcureAI — Vendor List", 14, 15);
+  doc.text("Opus-Procure AI — Vendor List", 14, 15);
   doc.setFontSize(10);
   doc.setTextColor(100);
   doc.text(`Query: "${query}" · ${vendors.length} vendors · Pune, Maharashtra`, 14, 22);
@@ -46,7 +46,7 @@ export async function exportVendorsPDF(vendors: Vendor[], query: string) {
     styles: { fontSize: 8 },
     headStyles: { fillColor: [30, 64, 175] },
   });
-  doc.save(`OpusProcureAI-Vendors-${sanitize(query)}.pdf`);
+  doc.save(`Opus-Procure-AI-Vendors-${sanitize(query)}.pdf`);
 }
 
 export async function exportComparisonPDF(vendors: Vendor[]) {
@@ -54,7 +54,7 @@ export async function exportComparisonPDF(vendors: Vendor[]) {
   const autoTable = (await import("jspdf-autotable")).default;
   const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(16);
-  doc.text("OpusProcureAI — Vendor Comparison", 14, 15);
+  doc.text("Opus-Procure AI — Vendor Comparison", 14, 15);
   autoTable(doc, {
     startY: 22,
     head: [["Vendor", "Rating", "Reviews", "Distance", "Phone", "Website", "Category"]],
@@ -70,7 +70,7 @@ export async function exportComparisonPDF(vendors: Vendor[]) {
     styles: { fontSize: 9 },
     headStyles: { fillColor: [30, 64, 175] },
   });
-  doc.save(`OpusProcureAI-Comparison.pdf`);
+  doc.save(`Opus-Procure-AI-Comparison.pdf`);
 }
 
 export async function exportRfqPDF(opts: {

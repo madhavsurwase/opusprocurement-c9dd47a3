@@ -201,7 +201,7 @@ export const searchVendors = createServerFn({ method: "POST" })
             try {
               const res = await fetch(url, {
                 signal: ctrl.signal,
-                headers: { "User-Agent": "Mozilla/5.0 OpusProcureAI/1.0" },
+                headers: { "User-Agent": "Mozilla/5.0 Opus-Procure-AI/1.0" },
                 redirect: "follow",
               });
               clearTimeout(t);
