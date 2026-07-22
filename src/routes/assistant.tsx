@@ -19,6 +19,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { searchVendors, type Vendor, type SearchResult } from "@/lib/places.functions";
+import { sendProcurementEmail } from "@/lib/send-email";
 
 export const Route = createFileRoute("/assistant")({
   head: () => ({
