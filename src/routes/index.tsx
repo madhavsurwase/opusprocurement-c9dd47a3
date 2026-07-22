@@ -9,13 +9,13 @@ import { loadHistory, type SearchHistoryEntry } from "@/lib/history";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Procurement Dashboard — OpusProcureAI" },
+      { title: "Procurement Dashboard — Opus-Procure AI" },
       {
         name: "description",
         content:
           "Enterprise procurement dashboard: track searches, vendors found, and AI-powered supplier recommendations across Pune.",
       },
-      { property: "og:title", content: "Procurement Dashboard — OpusProcureAI" },
+      { property: "og:title", content: "Procurement Dashboard — Opus-Procure AI" },
       {
         property: "og:description",
         content: "AI-powered enterprise procurement intelligence for Pune-based suppliers.",
@@ -181,7 +181,7 @@ function Dashboard() {
             <Sparkles className="w-6 h-6 mb-3" />
             <h3 className="font-semibold tracking-tight">AI-powered procurement</h3>
             <p className="text-sm text-white/85 mt-2">
-              OpusProcureAI scans live Pune supplier data, ranks vendors, and recommends the best fit with a
+              Opus-Procure AI scans live Pune supplier data, ranks vendors, and recommends the best fit with a
               confidence score — instantly.
             </p>
             <Link to="/search" className="inline-flex items-center gap-1 text-sm font-medium mt-4 hover:underline">

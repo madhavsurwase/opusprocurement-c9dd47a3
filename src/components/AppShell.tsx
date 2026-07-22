@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="font-semibold text-sm tracking-tight text-white">OpusProcureAI</div>
+            <div className="font-semibold text-sm tracking-tight text-white">Opus-Procure AI</div>
             
           </div>
         </div>
@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="flex-1 min-w-0 flex flex-col">
         <header className="h-14 border-b border-border bg-card flex items-center px-6 gap-4">
-          <div className="md:hidden font-semibold">OpusProcureAI</div>
+          <div className="md:hidden font-semibold">Opus-Procure AI</div>
           <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[var(--color-success)]" />

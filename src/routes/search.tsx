@@ -68,13 +68,13 @@ export const Route = createFileRoute("/search")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
-      { title: "Vendor Search — OpusProcureAI" },
+      { title: "Vendor Search — Opus-Procure AI" },
       {
         name: "description",
         content:
           "Discover verified procurement vendors in Pune with AI-powered ranking, comparisons, and RFQ generation.",
       },
-      { property: "og:title", content: "Vendor Search — OpusProcureAI" },
+      { property: "og:title", content: "Vendor Search — Opus-Procure AI" },
       {
         property: "og:description",
         content: "AI-ranked supplier discovery for enterprise procurement in Pune.",

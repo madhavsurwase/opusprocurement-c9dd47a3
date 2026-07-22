@@ -24,13 +24,13 @@ import { sendProcurementEmail } from "@/lib/send-email";
 export const Route = createFileRoute("/assistant")({
   head: () => ({
     meta: [
-      { title: "AI Assistant — OpusProcureAI" },
+      { title: "AI Assistant — Opus-Procure AI" },
       {
         name: "description",
         content:
-          "Quickly discover vendors in Pune by chatting naturally — the OpusProcureAI assistant finds suppliers and drafts your inquiry email.",
+          "Quickly discover vendors in Pune by chatting naturally — the Opus-Procure AI assistant finds suppliers and drafts your inquiry email.",
       },
-      { property: "og:title", content: "AI Assistant — OpusProcureAI" },
+      { property: "og:title", content: "AI Assistant — Opus-Procure AI" },
       {
         property: "og:description",
         content: "Natural-language procurement assistant powered by AI.",
