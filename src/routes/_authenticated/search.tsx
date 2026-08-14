@@ -64,7 +64,7 @@ const searchSchema = z.object({
   distance: z.string().optional(),
 });
 
-export const Route = createFileRoute("/search")({
+export const Route = createFileRoute("/_authenticated/search")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
