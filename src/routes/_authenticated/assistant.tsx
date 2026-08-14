@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { searchVendors, type Vendor, type SearchResult } from "@/lib/places.functions";
 import { sendProcurementEmail } from "@/lib/send-email";
 
-export const Route = createFileRoute("/assistant")({
+export const Route = createFileRoute("/_authenticated/assistant")({
   head: () => ({
     meta: [
       { title: "AI Assistant — Opus-Procure AI" },
