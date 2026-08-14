@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated")({
 
     if (!employee || !employee.is_active) {
       await supabase.auth.signOut();
-      throw redirect({ to: "/login", search: { deactivated: true } });
+      throw redirect({ to: "/login" });
     }
 
     const { data: isAdmin } = await supabase.rpc("has_role", {
